@@ -45,12 +45,12 @@ var (
 // BoltTKV is a k/v store backed by Bolt.
 // It uses a sorted set to keep track of last
 // modified time and enable range queries.
-type BoltTKV struct { // nolint:govet // it won't accept any alignment
-	mainBucket  []byte
-	indexBucket []byte
+type BoltTKV struct {
 	db          *bolt.DB
 	path        string
 	namespace   string
+	mainBucket  []byte
+	indexBucket []byte
 	lastKey     Key
 	writable    bool
 }

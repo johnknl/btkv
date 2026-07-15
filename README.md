@@ -1,7 +1,6 @@
 # btkv
 
-Wrapper around [bbolt](https://github.com/etcd-io/bbolt) to for embedding time-ordered data that
-also needs to be retrievable by an identifier.
+Wrapper around [bbolt](https://github.com/etcd-io/bbolt) for time-ordered, k/v data.
 
 ## Usage
 

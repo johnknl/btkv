@@ -119,10 +119,10 @@ func BenchmarkBoltTKV_RangeValuesN1000(b *testing.B) {
 	}
 }
 
-type benchRecord struct { // nolint:govet
+type benchRecord struct {
 	ts   time.Time
-	data []byte
 	id   string
+	data []byte
 }
 
 type benchGenerator struct {
