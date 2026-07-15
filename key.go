@@ -37,6 +37,21 @@ func (k Key) Bytes() []byte {
 	return k[:]
 }
 
+// SplitMix64 returns a 64-bit pseudo-hash of the Key, using a mixing function to ensure
+// a good distribution of bits (aka _SplitMix64_).
+func (k Key) SplitMix64() uint64 {
+	x := binary.BigEndian.Uint64(k[:8]) ^
+		binary.BigEndian.Uint64(k[8:])
+
+	x ^= x >> 30
+	x *= 0xbf58476d1ce4e5b9
+	x ^= x >> 27
+	x *= 0x94d049bb133111eb
+	x ^= x >> 31
+
+	return x
+}
+
 // UnmarshalTime takes a Key and returns a time.Time value.
 func (k Key) UnmarshalTime() time.Time {
 	u := binary.BigEndian.Uint64(k[0:8]) ^ (1 << 63)
