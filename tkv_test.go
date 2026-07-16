@@ -90,48 +90,6 @@ func TestBoltTKV_CRUD(t *testing.T) {
 		assert.Equal(t, data, foundData)
 	})
 
-	t.Run("BulkSet", func(t *testing.T) {
-		require.NoError(t, store.BulkSet(ctx, &bulkGenerator{}))
-
-		gen := &bulkGenerator{
-			records: []record{
-				{
-					id:           "a",
-					data:         []byte(`{"id":"b"}`),
-					lastModified: now.Add(-time.Minute),
-				},
-				{
-					id:           "b",
-					data:         []byte(`{"id":"c"}`),
-					lastModified: now.Add(-2 * time.Minute),
-				},
-				{
-					id:           "c",
-					data:         []byte(`{"id":"d"}`),
-					lastModified: now.Add(-3 * time.Minute),
-				},
-				{
-					id:           "d",
-					data:         []byte(`{"id":"e"}`),
-					lastModified: now.Add(-4 * time.Hour),
-				},
-			},
-		}
-
-		require.NoError(t, store.BulkSet(ctx, gen))
-	})
-
-	t.Run("Range", func(t *testing.T) {
-		var found [][]byte
-
-		for value, err := range store.RangeValues(ctx, nil, nil, 0, 0) {
-			require.NoError(t, err)
-			found = append(found, value)
-		}
-
-		assert.NotEmpty(t, found)
-	})
-
 	t.Run("Delete", func(t *testing.T) {
 		err := store.Delete(id)
 
@@ -141,5 +99,105 @@ func TestBoltTKV_CRUD(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.False(t, exists)
+	})
+	t.Run("BulkSet", func(t *testing.T) {
+		require.NoError(t, store.BulkSet(ctx, &bulkGenerator{}))
+
+		gen := &bulkGenerator{
+			records: []record{
+				{
+					id:           "a1",
+					data:         []byte(`{"id":"a1"}`),
+					lastModified: now.Add(-time.Minute),
+				},
+				{
+					id:           "a2",
+					data:         []byte(`{"id":"a2"}`),
+					lastModified: now.Add(-time.Minute),
+				},
+				{
+					id:           "b1",
+					data:         []byte(`{"id":"b1"}`),
+					lastModified: now.Add(-2 * time.Minute),
+				},
+				{
+					id:           "b2",
+					data:         []byte(`{"id":"b2"}`),
+					lastModified: now.Add(-2 * time.Minute),
+				},
+				{
+					id:           "c1",
+					data:         []byte(`{"id":"c1"}`),
+					lastModified: now.Add(-3 * time.Minute),
+				},
+				{
+					id:           "c2",
+					data:         []byte(`{"id":"c2"}`),
+					lastModified: now.Add(-3 * time.Minute),
+				},
+				{
+					id:           "d1",
+					data:         []byte(`{"id":"d1"}`),
+					lastModified: now.Add(-4 * time.Hour),
+				},
+				{
+					id:           "d2",
+					data:         []byte(`{"id":"d2"}`),
+					lastModified: now.Add(-4 * time.Hour),
+				},
+			},
+		}
+
+		require.NoError(t, store.BulkSet(ctx, gen))
+	})
+
+	t.Run("RangeValues", func(t *testing.T) {
+		t.Run("will preserve the order of insertion", func(t *testing.T) {
+			actual := make([][]byte, 0)
+
+			for value, err := range store.RangeValues(ctx, nil, nil, 0, 0) {
+				require.NoError(t, err)
+				actual = append(actual, value)
+			}
+
+			require.Len(t, actual, 8)
+			require.Equal(
+				t,
+				[][]byte{
+					[]byte(`{"id":"d1"}`),
+					[]byte(`{"id":"d2"}`),
+					[]byte(`{"id":"c1"}`),
+					[]byte(`{"id":"c2"}`),
+					[]byte(`{"id":"b1"}`),
+					[]byte(`{"id":"b2"}`),
+					[]byte(`{"id":"a1"}`),
+					[]byte(`{"id":"a2"}`),
+				},
+				actual,
+			)
+		})
+
+		t.Run("upper time limit is exclusive", func(t *testing.T) {
+			actual := make([][]byte, 0)
+
+			to := now.Add(-2 * time.Minute)
+
+			for value, err := range store.RangeValues(ctx, nil, &to, 0, 0) {
+				require.NoError(t, err)
+				actual = append(actual, value)
+			}
+
+			require.Len(t, actual, 4)
+			require.Equal(
+				t,
+				[][]byte{
+					[]byte(`{"id":"d1"}`),
+					[]byte(`{"id":"d2"}`),
+					[]byte(`{"id":"c1"}`),
+					[]byte(`{"id":"c2"}`),
+				},
+				actual,
+			)
+		})
 	})
 }

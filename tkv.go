@@ -348,7 +348,7 @@ func (r *BoltTKV) RangeValues(
 				end = MarshalTime(*to, emptyKey).Bytes()
 			}
 
-			for k, v := c.Seek(start); k != nil && (end == nil || bytes.Compare(k, end) <= 0); k, v = c.Next() {
+			for k, v := c.Seek(start); k != nil && (end == nil || bytes.Compare(k, end) < 0); k, v = c.Next() {
 				idx++
 				if idx < offset {
 					continue
