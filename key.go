@@ -29,7 +29,22 @@ import (
 )
 
 // Key is a 16 byte array, representing a key in the key-value store.
-// The layout is 8 bytes for the timestamp and 8 bytes for a sequence counter
+//
+// The layout is 8 bytes for the timestamp, 4 bytes for a sequence counter,
+// and 4 bytes reserved for future use.
+//
+// The timestamp is stored as an 64-bit number representing the number of nanoseconds.
+//
+// It differs in this way from time.Time.MarshalBinary, which uses:
+// - 1 byte for the version (0x01)
+// - 8 bytes for the seconds since epoch (int64)
+// - 4 bytes for the nanoseconds (int32)
+// - 2/3 bytes for the timezone
+//
+// A btkv Key is also 16 bytes, but only half of it is used for the timestamp.
+//
+// This does mean that the timestamp is limited to representing timestamps between
+// 1677-09-21 and 2262-04-11.
 type Key [16]byte
 
 // Bytes returns the byte slice representation of the Key.
@@ -41,7 +56,7 @@ func (k Key) Bytes() []byte {
 // a good distribution of bits (aka _SplitMix64_).
 func (k Key) SplitMix64() uint64 {
 	x := binary.BigEndian.Uint64(k[:8]) ^
-		binary.BigEndian.Uint64(k[8:])
+		uint64(binary.BigEndian.Uint32(k[8:]))
 
 	x ^= x >> 30
 	x *= 0xbf58476d1ce4e5b9
@@ -63,7 +78,7 @@ func (k Key) UnmarshalTime() time.Time {
 // String returns a string representation of the Key, which includes the timestamp and sequence counter.
 func (k Key) String() string {
 	return k.UnmarshalTime().Format(time.RFC3339Nano) +
-		"-" + strconv.Itoa(int(binary.BigEndian.Uint64(k[8:16]))) // nolint:gosec // overflow smoverflow
+		"-" + strconv.Itoa(int(binary.BigEndian.Uint32(k[8:12]))) // nolint:gosec // overflow smoverflow
 }
 
 // NewKey creates a new Key from a byte slice.
@@ -84,17 +99,17 @@ func MarshalTime(t time.Time, prev Key) Key {
 	// Flip the sign bit to ensure that negative timestamps are sorted before positive timestamps
 	n := uint64(t.UnixNano()) ^ (1 << 63)
 
-	var seq uint64
+	var seq uint32
 
 	var key Key
 	binary.BigEndian.PutUint64(key[0:8], n) // put timestamp bytes
 
 	if bytes.Equal(prev[0:8], key[0:8]) {
-		seq = binary.BigEndian.Uint64(prev[8:16])
+		seq = binary.BigEndian.Uint32(prev[8:12])
 		seq++
 	}
 
-	binary.BigEndian.PutUint64(key[8:16], seq)
+	binary.BigEndian.PutUint32(key[8:12], seq)
 
 	return key
 }

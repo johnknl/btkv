@@ -76,15 +76,15 @@ func TestKey_SplitMix64(t *testing.T) {
 
 	key1 := Key{}
 	binary.BigEndian.PutUint64(key1[:8], uint64(now.UnixNano()))
-	binary.BigEndian.PutUint64(key1[8:], 42)
+	binary.BigEndian.PutUint32(key1[8:], 42)
 
 	key2 := Key{}
 	binary.BigEndian.PutUint64(key2[:8], uint64(now.UnixNano()))
-	binary.BigEndian.PutUint64(key2[8:], 43)
+	binary.BigEndian.PutUint32(key2[8:], 43)
 
 	key3 := Key{}
 	binary.BigEndian.PutUint64(key3[:8], uint64(now.UnixNano()))
-	binary.BigEndian.PutUint64(key3[8:], 44)
+	binary.BigEndian.PutUint32(key3[8:], 44)
 
 	t.Run("should return the same value for the same key", func(t *testing.T) {
 		mix := key1.SplitMix64()
