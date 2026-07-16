@@ -2,6 +2,26 @@
 
 Wrapper around [bbolt](https://github.com/etcd-io/bbolt) for time-ordered, k/v data.
 
+## Use case
+
+`btkv` has a niche use-case.
+
+If your data has:
+
+- Identifiers
+- Timestamps
+
+And:
+
+- You're looking for an embedded Go database option
+- You primarily fetch data as a large stream of time-ordered data
+- You need to be able to R/U/D entities by identity independent of
+  where they exist in the stream
+- But write speed is secondary to fetching continuous streams of 
+  time-ordered data
+
+Then, `btkv` is a perfect match ;)
+
 ## Usage
 
 ```go
@@ -97,13 +117,11 @@ func Example() {
 ```
 
 
-
-
 ## Benchmarks
 
 `btkv` is read optimized, specifically time range optimized. In the below benchmark `RangeValues()` is used to
 yield `990` values. That is ~60 ns per record. Write operations are dominated by `fsync`: it doesn't matter much
-if you write `1` or `100` records. Batching writes is highly recommended.
+if you write `1` or `100` records. The latter seems like a common sense batching size.
 
 ```
 goos: linux
